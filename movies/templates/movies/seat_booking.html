@@ -1,0 +1,203 @@
+{% extends "movies/base.html" %}
+
+{% block title %}Book Seats - {{ movie.title }} | CineVerse{% endblock %}
+
+{% block content %}
+<div class="py-4">
+  <div class="container">
+
+    <!-- Breadcrumb & Back Link -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="{% url 'movies:movie_list' %}" class="text-secondary text-decoration-none">Movies</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'movies:movie_detail' movie.id %}" class="text-secondary text-decoration-none">{{ movie.title }}</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">Seat Selection</li>
+        </ol>
+      </nav>
+
+      <a href="{% url 'movies:movie_detail' movie.id %}" class="btn btn-sm btn-cinema-outline text-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Change Showtime
+      </a>
+    </div>
+
+    <!-- Showtime Summary Strip -->
+    <div class="card cinema-card p-3 mb-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" class="rounded-3" style="width: 50px; height: 75px; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop&q=80';">
+          <div>
+            <h1 class="h5 fw-bold text-white mb-1">{{ movie.title }}</h1>
+            <div class="text-secondary small d-flex flex-wrap gap-2 align-items-center">
+              <span><i class="bi bi-geo-alt-fill text-warning me-1"></i>{{ showtime.screen_number }}</span>
+              <span>•</span>
+              <span><i class="bi bi-calendar-event me-1"></i>{{ showtime.show_date|date:"M d, Y" }}</span>
+              <span>•</span>
+              <span><i class="bi bi-clock me-1"></i>{{ showtime.show_time|time:"g:i A" }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <div class="text-end">
+            <span class="text-secondary small d-block">Price Per Seat</span>
+            <span class="fs-4 fw-bold text-warning">${{ showtime.ticket_price }}</span>
+          </div>
+          <div class="text-end border-start border-secondary border-opacity-25 ps-3">
+            <span class="text-secondary small d-block">Available</span>
+            <span class="fs-5 fw-bold text-white">{{ showtime.available_seats_count }} / {{ showtime.total_seats }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Booking Layout -->
+    <div class="row g-4">
+      <!-- Left Column: Cinema Auditorium & 5x8 Seat Matrix -->
+      <div class="col-lg-8">
+        <div class="seat-matrix-wrapper">
+
+          <!-- Cinema Screen Projection Visual -->
+          <div class="screen-container">
+            <div class="screen-visual">
+              <span class="screen-label">Theater Screen • Eyes Forward</span>
+            </div>
+          </div>
+
+          <!-- 5x8 Interactive Seat Selection Matrix -->
+          <div class="seat-grid" id="seatMatrixGrid" data-ticket-price="{{ ticket_price }}">
+            {% for row_info in grid_rows %}
+              <div class="seat-row">
+                <span class="row-label">{{ row_info.row_name }}</span>
+                {% for seat in row_info.seats %}
+                  <div class="seat-item {% if seat.is_booked %}seat-booked{% else %}seat-available{% endif %}"
+                       data-seat-code="{{ seat.code }}"
+                       title="{% if seat.is_booked %}Seat {{ seat.code }} (Booked){% else %}Seat {{ seat.code }} (${{ showtime.ticket_price }}){% endif %}"
+                       id="seat_{{ seat.code }}">
+                    <span>{{ seat.code }}</span>
+                  </div>
+                {% endfor %}
+                <span class="row-label">{{ row_info.row_name }}</span>
+              </div>
+            {% endfor %}
+          </div>
+
+          <!-- Legend Bar -->
+          <div class="seat-legend">
+            <div class="legend-item">
+              <span class="legend-pill seat-available"></span>
+              <span>Available</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-pill seat-selected"></span>
+              <span>Selected</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-pill seat-booked"></span>
+              <span>Reserved / Booked</span>
+            </div>
+          </div>
+
+          <div class="text-center mt-3 text-secondary small">
+            <i class="bi bi-info-circle me-1"></i> Click seats to select or deselect. You can select up to 10 seats per transaction.
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Order Summary & Checkout Form -->
+      <div class="col-lg-4">
+        <div class="card cinema-card p-4 sticky-top" style="top: 100px;">
+          <h2 class="h5 fw-bold text-white mb-3 d-flex align-items-center justify-content-between">
+            <span>Booking Summary</span>
+            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 fs-6">
+              <span id="selectedSeatCount">0</span> Seats
+            </span>
+          </h2>
+
+          <!-- Selected Seats Display -->
+          <div class="mb-3 p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
+            <div class="text-secondary small fw-bold mb-2">Selected Seats:</div>
+            <div id="selectedSeatsList" class="d-flex flex-wrap gap-1">
+              <!-- Dynamically populated with chips by JS -->
+            </div>
+            <div id="emptySeatsPlaceholder" class="text-secondary small fst-italic">
+              No seats selected yet. Please click available seats on the cinema grid.
+            </div>
+          </div>
+
+          <!-- Price Calculation Box -->
+          <div class="mb-4 pb-3 border-bottom border-secondary border-opacity-25">
+            <div class="d-flex justify-content-between text-secondary small mb-1">
+              <span>Ticket Price:</span>
+              <span>${{ showtime.ticket_price }} / seat</span>
+            </div>
+            <div class="d-flex justify-content-between text-secondary small mb-1">
+              <span>Subtotal:</span>
+              <span id="subtotalDisplay" class="fw-bold text-white">$0.00</span>
+            </div>
+            <div class="d-flex justify-content-between text-secondary small mb-2">
+              <span>Convenience Fee:</span>
+              <span class="text-success">$0.00 (Free)</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary border-opacity-25">
+              <span class="fw-bold text-white fs-6">Total Amount:</span>
+              <span id="totalPriceDisplay" class="fs-4 fw-bold text-warning font-display">$0.00</span>
+            </div>
+          </div>
+
+          <!-- Booking Customer Form -->
+          <form method="POST" action="{% url 'movies:seat_booking' showtime.id %}" id="bookingCheckoutForm">
+            {% csrf_token %}
+
+            <!-- Hidden Selected Seats Field (Validated Server-side) -->
+            <input type="hidden" name="selected_seats" id="id_selected_seats" value="{{ form.selected_seats.value|default:'' }}">
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger small p-2 mb-3">
+                {% for err in form.non_field_errors %}{{ err }}<br>{% endfor %}
+              </div>
+            {% endif %}
+
+            {% if form.selected_seats.errors %}
+              <div class="alert alert-danger small p-2 mb-3">
+                {% for err in form.selected_seats.errors %}{{ err }}<br>{% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="id_customer_name" class="form-label text-secondary small fw-bold">Full Name:</label>
+              {{ form.customer_name }}
+              {% if form.customer_name.errors %}
+                <div class="text-danger small">{{ form.customer_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="id_customer_email" class="form-label text-secondary small fw-bold">Email Address:</label>
+              {{ form.customer_email }}
+              {% if form.customer_email.errors %}
+                <div class="text-danger small">{{ form.customer_email.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text text-secondary" style="font-size: 0.75rem;">Your booking confirmation will be sent here.</div>
+            </div>
+
+            <div class="mb-4">
+              <label for="id_customer_phone" class="form-label text-secondary small fw-bold">Phone Number:</label>
+              {{ form.customer_phone }}
+              {% if form.customer_phone.errors %}
+                <div class="text-danger small">{{ form.customer_phone.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <button type="submit" id="btnConfirmBooking" class="btn btn-cinema-primary w-100 py-3 fw-bold fs-6" disabled>
+              Select Seats to Continue
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

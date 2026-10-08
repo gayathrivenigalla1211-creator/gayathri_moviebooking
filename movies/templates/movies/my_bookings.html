@@ -1,0 +1,111 @@
+{% extends "movies/base.html" %}
+
+{% block title %}Find My Tickets | CineVerse{% endblock %}
+
+{% block content %}
+<div class="py-5">
+  <div class="container">
+    <!-- Header -->
+    <div class="text-center mb-5">
+      <div class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill mb-3">
+        <i class="bi bi-ticket-perforated me-1"></i> Customer Self-Service
+      </div>
+      <h1 class="display-5 fw-bold text-white font-display">Find Your Tickets</h1>
+      <p class="text-secondary mx-auto" style="max-width: 550px;">
+        Enter your booking email address, phone number, or booking reference code to view and reprint your tickets.
+      </p>
+
+      <!-- Lookup Form -->
+      <div class="row justify-content-center mt-4">
+        <div class="col-md-7 col-lg-6">
+          <form method="GET" action="{% url 'movies:my_bookings' %}">
+            <div class="input-group input-group-lg shadow-lg">
+              <input type="text" name="q" class="form-control" placeholder="Email (e.g. alex@example.com) or TKT-..." value="{{ query }}" required>
+              <button class="btn btn-warning fw-bold px-4" type="submit">
+                <i class="bi bi-search me-1"></i> Find Tickets
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Area -->
+    {% if has_searched %}
+      <div class="row justify-content-center">
+        <div class="col-lg-9">
+          <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-25">
+            <h2 class="h4 fw-bold text-white mb-0">
+              Found {{ bookings|length }} Booking{{ bookings|length|pluralize }}
+            </h2>
+            <span class="text-secondary small">Search query: "{{ query }}"</span>
+          </div>
+
+          {% if bookings %}
+            <div class="d-flex flex-column gap-4">
+              {% for booking in bookings %}
+                <div class="card cinema-card p-4">
+                  <div class="row align-items-center g-3">
+                    <div class="col-auto">
+                      <img src="{{ booking.showtime.movie.poster_url }}" alt="{{ booking.showtime.movie.title }}" class="rounded-3" style="width: 70px; height: 105px; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop&q=80';">
+                    </div>
+                    <div class="col">
+                      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                        <div>
+                          <span class="badge-genre me-2">{{ booking.showtime.movie.genre }}</span>
+                          <span class="ticket-code-badge small">{{ booking.booking_code }}</span>
+                          <h3 class="h5 fw-bold text-white mt-1 mb-1">{{ booking.showtime.movie.title }}</h3>
+                          <div class="text-secondary small">
+                            <i class="bi bi-person me-1 text-warning"></i>Booked by: <span class="text-white fw-semibold">{{ booking.customer_name }}</span> ({{ booking.customer_email }})
+                          </div>
+                        </div>
+                        <div class="text-end">
+                          <span class="text-secondary small d-block">Total Paid</span>
+                          <span class="fs-4 fw-bold text-warning">${{ booking.total_paid }}</span>
+                        </div>
+                      </div>
+
+                      <div class="row g-2 text-secondary small mb-3">
+                        <div class="col-sm-4">
+                          <i class="bi bi-calendar-event me-1 text-warning"></i> {{ booking.showtime.show_date|date:"M d, Y" }}
+                        </div>
+                        <div class="col-sm-4">
+                          <i class="bi bi-clock me-1 text-warning"></i> {{ booking.showtime.show_time|time:"g:i A" }}
+                        </div>
+                        <div class="col-sm-4">
+                          <i class="bi bi-geo-alt me-1 text-warning"></i> {{ booking.showtime.screen_number }}
+                        </div>
+                      </div>
+
+                      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top border-secondary border-opacity-25">
+                        <div class="d-flex align-items-center gap-1">
+                          <span class="text-secondary small me-1">Seats:</span>
+                          {% for s in booking.seats_list %}
+                            <span class="badge bg-warning text-dark fw-bold">{{ s }}</span>
+                          {% endfor %}
+                        </div>
+
+                        <a href="{% url 'movies:booking_confirmation' booking.id %}" class="btn btn-sm btn-cinema-primary">
+                          <i class="bi bi-ticket-perforated-fill me-1"></i> View & Print Ticket Pass
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <!-- No Results -->
+            <div class="card cinema-card p-5 text-center">
+              <i class="bi bi-search text-secondary fs-1 mb-2"></i>
+              <h3 class="h5 text-white fw-bold">No Bookings Found</h3>
+              <p class="text-secondary small mb-0">We couldn't find any tickets associated with "{{ query }}". Please check your spelling or search with your booking email.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Django collected static files (generated during Render build)
+staticfiles/
+
+# Environment variables & secrets
+.env
+
+# SQLite local database (Render uses ephemeral or newly seeded db via create_superuser.py)
+# db.sqlite3
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
