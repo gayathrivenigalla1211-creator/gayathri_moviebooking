@@ -13,8 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-capstone-movie-ticket-booking-portal-secret-key")
 
-# DEBUG is True locally, False when deployed on Render (RENDER="True") or DEBUG="False"
-DEBUG = os.environ.get("RENDER", "False") != "True" and os.environ.get("DEBUG", "True").lower() in ("true", "1")
+DEBUG = os.environ.get("RENDER", "").lower() != "true" and os.environ.get("DEBUG", "True").lower() in ("true", "1")
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".onrender.com", "*"]
 
